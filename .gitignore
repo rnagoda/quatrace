@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables — NEVER commit real secrets.
+# Only .env.example (with placeholder values) is tracked.
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+.vite/
+*.local
+
+# Test / coverage artifacts
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude Code — local/personal settings (shared config like .claude/settings.json
+# and .claude/skills/ IS tracked; only the per-user local file is ignored)
+.claude/settings.local.json
+
+# Misc
+*.pem
