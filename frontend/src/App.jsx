@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import ProjectsPage from './pages/ProjectsPage.jsx';
+import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
 import { useAuthStore } from './store/useAuthStore.js';
 import { restoreSession } from './services/auth.js';
@@ -42,6 +44,22 @@ export default function App() {
         element={
           <RequireAuth>
             <HomePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects"
+        element={
+          <RequireAuth>
+            <ProjectsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects/:id"
+        element={
+          <RequireAuth>
+            <ProjectDetailPage />
           </RequireAuth>
         }
       />
