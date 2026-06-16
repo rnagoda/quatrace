@@ -132,8 +132,17 @@ QuaTrace models the QA workflow most learners will encounter in real jobs:
 - **Environments** — named targets for test runs (e.g. Staging, Production, QA)
 - **Builds/Releases** — versioned snapshots test runs are executed against
 
+QuaTrace has two architecturally distinct components (see PRD `quatrace-prd.md` §1.4 — the
+canonical reference for the learner/scenario model):
+- **QuaTrace Core** — the QA tracking app above (defects, test cases, runs, projects, orgs,
+  billing, marketplace). This is what learners test against.
+- **QuaTrace Scenarios** — the simulation layer on top of Core: onboarding, the Scenario
+  Dashboard, the event engine, and the virtual-team **NPC** system. Scenarios depends on Core,
+  never the reverse. Each learner is provisioned their own **private organization** (defaulted to
+  the Pro tier) for full isolation.
+
 ### Data Scale (seeded)
-- **Users:** 500+ across four roles (admin, manager, tester, viewer)
+- **Users:** 500+ across five roles (admin, manager, developer, tester, viewer)
 - **Organizations:** 50+ with realistic team structures
 - **Projects:** 100+ active projects across organizations
 - **Defects:** 1,000+ with varied statuses, severities, and assignees
@@ -144,10 +153,14 @@ QuaTrace models the QA workflow most learners will encounter in real jobs:
 - **Marketplace integrations:** 15 purchasable add-ons (Slack, GitHub, CI tools, etc.)
 - **Billing records:** invoices and payment history per organization
 
-### API Surface (~40–45 endpoints)
-Domains: `auth`, `users`, `organizations`, `projects`, `defects`, `test-cases`,
-`test-suites`, `test-runs`, `environments`, `subscriptions`, `billing`, `marketplace`,
+### API Surface (~55–60 endpoints)
+Core domains: `auth`, `users`, `organizations`, `projects`, `defects`, `test-cases`,
+`test-suites`, `test-runs`, `environments`, `builds`, `subscriptions`, `billing`, `marketplace`,
 `admin`, `health`
+
+Scenario-layer domains: `scenarios`, `events`, `notifications`, `inbox`
+
+See PRD `quatrace-prd.md` §7.2 for the per-domain route prefixes (the canonical endpoint map).
 
 Every endpoint must have:
 - Correct HTTP status codes
@@ -165,8 +178,9 @@ Every endpoint must have:
 | Test runs / month | 10 | 500 | Unlimited |
 | API access | No | Yes | Yes |
 | Marketplace add-ons | No | Yes | Yes |
-| Audit log | No | No | Yes |
 | Custom environments | No | Yes | Yes |
+| Audit log | No | No | Yes |
+| Priority support | No | No | Yes |
 
 ---
 
@@ -196,6 +210,33 @@ Every endpoint must have:
 - All Express route handlers wrapped in a `asyncHandler` utility
 - A global error middleware catches everything and returns consistent JSON
 - Frontend catches API errors at the service layer and throws typed error objects
+
+### Design Principles (SOLID)
+All code follows the SOLID principles. Because the audience is beginners, apply them
+**pragmatically** — they exist to keep the code easy to follow and test, never as an excuse for
+clever abstraction. In plain JavaScript with no interfaces, they map onto our layered
+architecture as follows:
+
+- **S — Single Responsibility:** Each module has one reason to change. Controllers only translate
+  HTTP ↔ service calls; services hold one domain's business logic; models/query helpers only
+  touch the DB; utils do one thing. A function that validates *and* persists *and* formats is
+  three functions.
+- **O — Open/Closed:** Extend behavior by adding new service functions, routes, or strategy
+  objects — not by editing and re-risking working code. New defect status transitions or new
+  marketplace integrations are added, not bolted into a growing `if/else`.
+- **L — Liskov Substitution:** Interchangeable implementations must honor the same contract.
+  Every endpoint returns the same `{ data, meta, error }` envelope; every service error is a
+  typed error the global middleware can handle uniformly — callers never special-case a variant.
+- **I — Interface Segregation:** Keep modules and their exports small and focused. A consumer
+  should import the one service function it needs, not depend on a god-object service that
+  exposes the whole domain. Split fat modules rather than growing them.
+- **D — Dependency Inversion:** High-level logic does not reach for concrete globals. Pass
+  dependencies in (db handle, services, config) so they can be substituted in tests. Controllers
+  depend on service functions, services depend on injected data access — not the reverse, and
+  never on a hard-coded singleton.
+
+SOLID is part of code review and of the Definition of Done (below): a change that violates these
+without a stated reason is not done.
 
 ---
 
@@ -227,6 +268,41 @@ There are two test suite configurations:
 - Unit: 80%+ line coverage on services and utils
 - API: 100% of documented endpoints covered (happy path + at least 2 error cases each)
 - E2E: all critical user flows covered (auth, defect lifecycle, test case authoring, test run execution, billing)
+
+---
+
+## Definition of Done
+
+QuaTrace is a QA teaching platform, so its own quality bar must be exemplary. A feature, fix, or
+user flow is **not done** — and its PR is incomplete — until all of the following hold. This is
+the binding standard; the full test architecture and coverage targets live in the PRD
+(`quatrace-prd.md` §9), which this references rather than duplicates.
+
+### Testing — every feature ships its full test matrix
+- **Unit tests (Vitest)** for all new service and utility logic — 80%+ line coverage.
+- **API tests (Supertest + Vitest)** for every new/changed endpoint — happy path + at least two
+  error cases (validation failure and authz/permission failure at minimum).
+- **E2E tests (Playwright)** for every affected user flow, including RBAC and feature-gate paths.
+- **Accessibility tests** for every new/changed UI surface (see below).
+- A change that adds behavior with no corresponding tests is not done. The `buggy` branch is the
+  only place tests may intentionally fail — and those defects are seeded, never introduced here.
+
+### Accessibility — WCAG 2.2 Level AA
+The application must conform to **WCAG 2.2 AA**. Conformance is proven by a combination, because
+automated tooling alone cannot verify all success criteria:
+- **Automated:** `@axe-core/playwright` runs against every page and key UI state in E2E (tagged
+  `@a11y`); component tests assert a11y on individual components. Zero axe violations is a gate.
+- **Manual (documented):** each feature carries a short WCAG 2.2 AA checklist — keyboard-only
+  operation, visible focus and logical focus order, screen-reader labelling, target size, and
+  no reliance on color alone — recorded in the PR.
+- Use the `/a11y-audit` skill to run this pass; use `/feature-tests` to scaffold the full matrix.
+
+### Definition-of-Done checklist (per PR)
+- [ ] SOLID respected (see Coding Standards); no `console.log`; no hardcoded secrets/URLs
+- [ ] Unit + API + E2E + a11y tests added and passing; coverage targets met
+- [ ] WCAG 2.2 AA: axe clean + manual checklist recorded
+- [ ] `README.md` updated with any pertinent details (per Git Conventions)
+- [ ] CI green; PR opened against a protected branch for the maintainer to merge
 
 ---
 
@@ -361,6 +437,8 @@ Every PR must:
 - Never commit directly to `main` or `buggy` — always work on a `feature/*` or `fix/*` branch
 - Never merge, squash, or push to a protected branch — open a PR and let the maintainer merge
 - Never open a PR without updating `README.md` for any pertinent changes it introduces
+- Never ship a feature without its full test matrix (unit + API + E2E + a11y) and WCAG 2.2 AA
+  verification — see the Definition of Done; untested behavior is not done
 - Never commit a `.env` file or any secret — only `.env.example` with placeholders is committed
 - Never edit migration files that have already been committed and run
 - Never hardcode secrets, credentials, or environment-specific URLs

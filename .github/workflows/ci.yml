@@ -1,0 +1,121 @@
+name: CI
+
+# Runs the full QuaTrace quality gate on every PR to a protected branch.
+# While the app is still being scaffolded, each job no-ops gracefully when its
+# package.json is absent, so the pipeline is green-ready. As code lands, the
+# guards pass and the jobs become blocking — enforcing the Definition of Done
+# (unit + API + E2E + accessibility) from CLAUDE.md.
+
+on:
+  pull_request:
+    branches: [main, buggy]
+  push:
+    branches: [main, buggy]
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  backend-unit:
+    name: Backend unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Run unit tests with coverage
+        run: |
+          if [ -f backend/package.json ]; then
+            cd backend
+            npm ci
+            npm run test:coverage
+          else
+            echo "::notice::backend/ not scaffolded yet — skipping backend unit tests."
+          fi
+
+  backend-api:
+    name: Backend API tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: quatrace
+          POSTGRES_PASSWORD: quatrace
+          POSTGRES_DB: quatrace_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U quatrace"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://quatrace:quatrace@localhost:5432/quatrace_test
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Migrate and run API tests
+        run: |
+          if [ -f backend/package.json ]; then
+            cd backend
+            npm ci
+            npm run db:migrate
+            npm run test:api
+          else
+            echo "::notice::backend/ not scaffolded yet — skipping API tests."
+          fi
+
+  frontend-unit:
+    name: Frontend component tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Run component tests
+        run: |
+          if [ -f frontend/package.json ]; then
+            cd frontend
+            npm ci
+            npm run test
+          else
+            echo "::notice::frontend/ not scaffolded yet — skipping frontend tests."
+          fi
+
+  e2e-a11y:
+    name: E2E + accessibility (WCAG 2.2 AA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Run Playwright E2E and axe a11y suites
+        run: |
+          if [ -f e2e/package.json ]; then
+            cd e2e
+            npm ci
+            npx playwright install --with-deps
+            npx playwright test
+          else
+            echo "::notice::e2e/ not scaffolded yet — skipping E2E + a11y tests."
+          fi

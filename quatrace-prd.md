@@ -2,11 +2,11 @@
 
 ## QuaTrace — QA Ticket Tracking & Test Management Platform
 
-**Version:** 0.2 (Draft) **Owner:** UnderstandQA **Status:** In Review **Last Updated:** June 2026
+**Version:** 0.3 (Draft) **Owner:** UnderstandQA **Status:** In Review **Last Updated:** June 2026
 
 ---
 
-## 1\. Overview
+## 1. Overview
 
 ### 1.1 Purpose of This Document
 
@@ -35,7 +35,7 @@ These components share the same database and API but are developed and documente
 
 ---
 
-## 2\. Goals & Non-Goals
+## 2. Goals & Non-Goals
 
 ### 2.1 Goals
 
@@ -58,7 +58,7 @@ These components share the same database and API but are developed and documente
 
 ---
 
-## 3\. Learners & Roles
+## 3. Learners & Roles
 
 ### 3.1 Learners
 
@@ -71,23 +71,24 @@ Learners access QuaTrace in one of two ways:
 
 ### 3.2 Learner Experience Model
 
-Each learner exists inside a single fictional organization. Within that organization:
+Each learner is provisioned their **own dedicated private organization** on the hosted instance. Within that organization:
 
 - They are a **member of one active project** — their own, assigned during onboarding  
-- They can **view all other projects** in the organization in read-only mode  
+- They can **view all other projects** in the organization in read-only mode — these are seeded NPC-owned sibling projects within their private org, not other learners' work  
 - They have a **virtual team** of seeded NPC teammates on their active project  
 - Their active project comes pre-populated with a baseline set of realistic data
 
-This mirrors the real workplace experience: a QA engineer on a team has full visibility into their own project but only read access to other teams' work in tools like Jira. Learners encounter the same permission model they will see on the job.
+This mirrors the real workplace experience: a QA engineer on a team has full visibility into their own project but only read access to other teams' work in tools like Jira. Learners encounter the same permission model they will see on the job. Because each learner's organization is private and isolated, one learner's actions can never affect another's data (see Section 6.6).
 
 ### 3.3 Fictional Roles (In-App)
 
-Within the QuaTrace application, four roles exist. Learners are assigned the Tester role by default during onboarding, which reflects the most common entry-level QA position.
+Within the QuaTrace application, five roles exist. Learners are assigned the Tester role by default during onboarding, which reflects the most common entry-level QA position.
 
 | Role | Description |
 | :---- | :---- |
 | **Admin** | Full access to all features, user management, billing, and org settings |
 | **Manager** | Can create and manage projects, assign defects, view reports |
+| **Developer** | Responds to and transitions defects, pushes builds, comments. Individual-contributor role focused on the dev workflow; cannot manage users, billing, or projects |
 | **Tester** | Can create and execute test cases and test runs, log defects |
 | **Viewer** | Read-only access to all project data |
 
@@ -100,7 +101,7 @@ Each learner's active project has a virtual team of seeded NPC accounts filling 
 | NPC Role | In-App Role | Purpose |
 | :---- | :---- | :---- |
 | Product Owner | Manager | Assigns stories, introduces epics, reviews completed work |
-| Developer | SW Developer | Responds to defects, moves tickets, pushes builds |
+| Developer | Developer | Responds to defects, moves tickets, pushes builds |
 | QA Lead | Manager | Reviews test runs, provides feedback, assigns test cases |
 | Scrum Master | Viewer | Sends sprint summaries, facilitates process events |
 | QA Engineer | Tester | Tests tickets |
@@ -109,7 +110,7 @@ NPCs are persistent seeded accounts — they are not dynamically generated per l
 
 ---
 
-## 4\. Onboarding Flow
+## 4. Onboarding Flow
 
 When a learner creates a QuaTrace account for the first time, they go through a short onboarding sequence before reaching the main application.
 
@@ -140,16 +141,17 @@ When a learner creates a QuaTrace account for the first time, they go through a 
 When a learner completes onboarding, the system:
 
 - Creates a learner account with the Tester role  
-- Assigns them to a pre-configured fictional organization  
+- Provisions a dedicated private organization for the learner, defaulted to the **Pro** subscription tier (so the virtual team fits the member limit and marketplace + custom environments are available for exercises)  
 - Creates their personal project (named after their chosen project type)  
-- Seeds the project with a baseline dataset appropriate to the project type: a small number of open defects, a starter test suite, one or two builds, and a set of environments (Dev, QA, Staging)  
+- Seeds a few read-only NPC-owned sibling projects in the org, so the learner has other projects to view (matching the read-only visibility described in Section 3.2)  
+- Seeds the personal project with a baseline dataset appropriate to the project type: a small number of open defects, a starter test suite, a few builds, and a set of environments (Dev, QA, Staging)  
 - Associates the NPC virtual team with the project
 
 The baseline seed data is lightweight — enough to feel real, not overwhelming. Scenarios layer additional data on top when launched.
 
 ---
 
-## 5\. Core Features (QuaTrace Core)
+## 5. Core Features (QuaTrace Core)
 
 ### 5.1 Authentication & Session Management
 
@@ -177,8 +179,8 @@ Each defect has:
 | Status | New, Open, In Progress, In Testing, Resolved, Closed, Won't Fix |
 | Severity | Critical, High, Medium, Low |
 | Priority | P1, P2, P3, P4 |
-| Assignee | Any team member with Tester role or above |
-| Reporter | Any team member with Tester role or above |
+| Assignee | Any member with the Tester, Developer, Manager, or Admin role (i.e. not Viewer) |
+| Reporter | Any member with the Tester, Developer, Manager, or Admin role (i.e. not Viewer) |
 | Environment | Linked to a project environment |
 | Build/Release | Optional link to a build |
 | Attachments | File references (simulated — no real file storage) |
@@ -246,7 +248,7 @@ Projects contain all domain objects: defects, test suites, test cases, test runs
 
 ### 5.6 Environments & Builds
 
-Environments are named targets for test execution within a project (e.g. Dev, QA, Staging, Production). Each learner project ships with three default environments. Pro and Enterprise tiers allow custom environments.
+Environments are named targets for test execution within a project. Each learner project ships with three default environments (Dev, QA, Staging). Additional environments (e.g. Production) are custom environments, available on the Pro and Enterprise tiers.
 
 Builds are lightweight version markers — a name/number and optional release notes — used to associate defects and test runs with a specific point in time.
 
@@ -267,6 +269,8 @@ QuaTrace operates on a three-tier subscription model. Billing is simulated — n
 | Priority support | No | No | Yes |
 
 Feature gates must be enforced at the API layer. Attempting to exceed a plan limit returns a structured error response that learners can write assertions against.
+
+Learner organizations default to the **Pro** tier (see Section 4.2) so that the virtual team fits within the member limit and marketplace add-ons and custom environments are available for exercises. To let learners still practice testing Free-tier feature gates, a dedicated billing scenario provisions or temporarily applies a Free-tier context, then walks the learner through hitting a limit and upgrading. Feature-gate exercises are driven through that scenario rather than by putting the learner's own org on Free.
 
 ### 5.8 Marketplace
 
@@ -293,7 +297,7 @@ Metrics are calculated server-side from real seed data, making them valid target
 
 ---
 
-## 6\. Scenario Engine (QuaTrace Scenarios)
+## 6. Scenario Engine (QuaTrace Scenarios)
 
 The Scenario Engine is the simulation layer built on top of QuaTrace Core. It transforms the app from a static practice environment into a guided, reactive workplace simulation.
 
@@ -370,7 +374,7 @@ NPC responses at launch are pre-scripted — fixed text per trigger, written to 
 
 | Step | Trigger | NPC | Response |
 | :---- | :---- | :---- | :---- |
-| 1 | Scenario launch | Product Owner | "Welcome to Sprint 3\. We've got a new build ready for testing — can you start with the login flow?" |
+| 1 | Scenario launch | Product Owner | "Welcome to Sprint 3. We've got a new build ready for testing — can you start with the login flow?" |
 | 2 | Learner creates first defect | Developer | "Thanks for logging this. I'll take a look." (assigns defect to themselves) |
 | 3 | Learner moves defect In Testing → In Progress | Developer | "Just pushed a fix for this. Can you retest on the QA environment?" |
 | 4 | Learner re-tests and resolves the defect | QA Lead | "Nice work. Go ahead and mark it resolved and we'll close it after sign-off." |
@@ -402,49 +406,37 @@ These controls only affect the learner's own project data. The broader org data 
 
 ---
 
-## 7\. API Design
+## 7. API Design
 
 ### 7.1 Conventions
 
 All API responses follow a consistent envelope:
 
+```json
 {
-
-  "data": { },
-
+  "data": {},
   "meta": {
-
     "page": 1,
-
     "perPage": 20,
-
     "total": 143
-
   },
-
   "error": null
-
 }
+```
 
 On error:
 
+```json
 {
-
   "data": null,
-
   "meta": null,
-
   "error": {
-
-    "code": "VALIDATION\_ERROR",
-
+    "code": "VALIDATION_ERROR",
     "message": "Title is required",
-
-    "details": \[ \]
-
+    "details": []
   }
-
 }
+```
 
 All list endpoints support pagination via `?page=` and `?perPage=` query parameters, plus basic filtering and sorting relevant to their domain.
 
@@ -474,16 +466,18 @@ All list endpoints support pagination via `?page=` and `?perPage=` query paramet
 
 ---
 
-## 8\. Data & Seed Requirements
+## 8. Data & Seed Requirements
 
 ### 8.1 Global Seed Data
 
 The hosted instance must feel populated and real. Seed data is generated with Faker.js and must be deterministic (seeded random — same output every time `db:seed` is run).
 
+This global seed populates the shared demo dataset for the hosted instance. It is separate from the per-learner provisioning described in Sections 4.2 and 8.2: each onboarded learner is *additionally* given a fresh private organization (their personal project, read-only NPC sibling projects, and NPC team), which keeps every learner's data isolated from the global dataset and from other learners.
+
 | Entity | Seeded Count |
 | :---- | :---- |
 | Organizations | 50 |
-| Users (NPCs \+ global) | 500+ |
+| Users (NPCs + global) | 500+ |
 | Projects | 100+ |
 | Defects | 1,000+ |
 | Test Cases | 2,000+ |
@@ -508,7 +502,7 @@ When a learner completes onboarding, their project is seeded with a lightweight 
 | Test Runs | 2 (one completed, one planned) |
 | Environments | 3 (Dev, QA, Staging) |
 | Builds | 3 (representing recent sprint history) |
-| NPC team members | 4 (Product Owner, Developer, QA Lead, Scrum Master) |
+| NPC team members | 5 (Product Owner, Developer, QA Lead, Scrum Master, QA Engineer) |
 
 ### 8.3 Scenario Seed Data
 
@@ -516,7 +510,7 @@ Each scenario definition includes its own seed spec — the data loaded when the
 
 ---
 
-## 9\. Test Suite Requirements
+## 9. Test Suite Requirements
 
 ### 9.1 Two-Branch Strategy
 
@@ -530,9 +524,9 @@ The repository maintains two long-lived branches:
 | Test Type | Tool | Location |
 | :---- | :---- | :---- |
 | Unit tests | Vitest | `backend/src/**/*.test.js`, `frontend/src/**/*.test.jsx` |
-| API tests | Supertest \+ Vitest | `backend/tests/api/` |
+| API tests | Supertest + Vitest | `backend/tests/api/` |
 | E2E tests | Playwright | `e2e/tests/` |
-| Accessibility | axe-core \+ Playwright | `e2e/tests/` (tagged `@a11y`) |
+| Accessibility | axe-core + Playwright | `e2e/tests/` (tagged `@a11y`) |
 | Visual regression | Playwright | `e2e/visual/` |
 | Performance (planned) | k6 or Artillery | `perf/` (future) |
 | Contract (planned) | Pact | `backend/tests/contract/` (future) |
@@ -554,8 +548,8 @@ The repository maintains two long-lived branches:
 - Attempt an invalid status transition and assert the error  
 - Author a test case and add it to a suite  
 - Create and execute a test run; record pass, fail, and blocked results  
-- Attempt to exceed a Free tier limit and assert the feature gate error  
-- Upgrade subscription and verify previously gated features are now accessible  
+- In the billing scenario (Free-tier context), attempt to exceed a plan limit and assert the feature gate error  
+- Upgrade subscription (Free → Pro) and verify previously gated features are now accessible  
 - Install a marketplace integration and verify configuration is persisted  
 - Admin invites a new user; user receives role and can log in  
 - Audit log reflects a sequence of actions in correct order
@@ -572,7 +566,7 @@ The repository maintains two long-lived branches:
 
 ---
 
-## 10\. Infrastructure & Deployment
+## 10. Infrastructure & Deployment
 
 ### 10.1 Local Development
 
@@ -586,7 +580,7 @@ Requirements:
 - The API and frontend each start with `npm run dev`  
 - Full setup is documented in `README.md` with copy-pasteable commands
 
-### 10.2 Hosted Deployment (Current — Railway \+ Vercel)
+### 10.2 Hosted Deployment (Current — Railway + Vercel)
 
 The hosted instance at quatrace.com is the default environment for learners who do not want to run the app locally.
 
@@ -609,7 +603,7 @@ The migration will be documented step-by-step and published as a lesson series.
 
 ---
 
-## 11\. Constraints & Principles
+## 11. Constraints & Principles
 
 - **Plain JavaScript only.** No TypeScript. The audience is beginners; TypeScript adds a learning barrier before they have written a single test assertion.  
 - **No real external services.** Marketplace integrations, email, payments, and file storage are all simulated. The app must work fully offline after initial setup.  
@@ -621,7 +615,7 @@ The migration will be documented step-by-step and published as a lesson series.
 
 ---
 
-## 12\. Future Work & Open Questions
+## 12. Future Work & Open Questions
 
 | Item | Notes |
 | :---- | :---- |
@@ -639,10 +633,11 @@ The migration will be documented step-by-step and published as a lesson series.
 
 ---
 
-## 13\. Revision History
+## 13. Revision History
 
 | Version | Date | Author | Notes |
 | :---- | :---- | :---- | :---- |
 | 0.1 | June 2026 | UnderstandQA | Initial draft |
 | 0.2 | June 2026 | UnderstandQA | Added virtual teams, onboarding flow, scenario engine, NPC event system, learner data model, in-app inbox |
+| 0.3 | June 2026 | UnderstandQA | Five-role model (added Developer), Pro default tier, private-org-per-learner isolation, consistency + formatting pass |
 
