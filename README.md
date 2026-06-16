@@ -3,45 +3,56 @@
 > A fictional B2B SaaS platform for QA ticket tracking and test management,
 > built as a teaching tool for the UnderstandQA content brand.
 
-_The application is still being scaffolded. This README grows with every PR (per the project's
-Git conventions in `CLAUDE.md`); setup commands will be filled in once `backend/`, `frontend/`,
-and `e2e/` land._
+The codebase is being built incrementally. This is the **walking skeleton**: a runnable,
+fully-tested slice (Express + Knex + Postgres backend, React + Vite frontend, Playwright E2E +
+axe accessibility) with a `/api/health` endpoint and CI green end-to-end. Domain features land in
+subsequent increments, starting with the database schema.
 
 ## Documentation
 
-- **`quatrace-prd.md`** — the product requirements document (canonical for the domain, learner
-  model, scenario engine, API map, and seed data).
-- **`CLAUDE.md`** — the engineering reference: tech stack, coding standards, Git workflow, and
-  the Definition of Done.
+- **`quatrace-prd.md`** — product requirements (canonical for the domain, learner model,
+  scenario engine, API map, and seed data).
+- **`CLAUDE.md`** — engineering reference: tech stack, coding standards, Git workflow, and the
+  Definition of Done.
 
-## Engineering standards in force
+## Repository layout
 
-These apply from the first line of application code:
+```
+backend/    Express + Knex API (ES modules)
+frontend/   React + Vite app (Tailwind, Zustand, TanStack Query)
+e2e/        Playwright end-to-end + axe accessibility tests
+db/init/    Postgres init scripts (dev + test databases)
+```
 
-- **SOLID** — all code follows the SOLID principles, applied pragmatically for a beginner
-  audience (see `CLAUDE.md` → Coding Standards → Design Principles).
-- **Definition of Done** — a feature is not done until it ships its full test matrix
-  (**unit + API + E2E + accessibility**) and meets the accessibility bar below
-  (see `CLAUDE.md` → Definition of Done).
-- **Accessibility: WCAG 2.2 AA** — proven by automated `@axe-core/playwright` scans plus a
-  documented manual checklist per feature.
-- **Git workflow** — all work on `feature/*` or `fix/*` branches; changes reach `main`/`buggy`
-  only via PR; merges are performed by the maintainer; no secrets committed.
+## Prerequisites
 
-## Helper skills
+- Node.js 20 (LTS)
+- Docker + Docker Compose **or** a local PostgreSQL 16 instance (see note below)
 
-Project skills under `.claude/skills/` assist with the standards above:
+## Local development
 
-- **`/feature-tests`** — scaffold the full unit + API + E2E + a11y test matrix for a feature.
-- **`/a11y-audit`** — run the WCAG 2.2 AA pass (automated axe + manual checklist).
+```bash
+# 1. Start PostgreSQL (creates the quatrace and quatrace_test databases)
+docker compose up -d
 
-## Continuous integration
+# 2. Backend: install, migrate, run
+cd backend
+cp ../.env.example .env        # adjust if needed
+npm install
+npm run db:migrate
+npm run dev                    # http://localhost:3000  (GET /api/health)
 
-`.github/workflows/ci.yml` runs the unit, API, E2E, and accessibility suites on every PR to a
-protected branch. It is a green-ready skeleton today (each job no-ops until its package is
-present) and becomes blocking as the corresponding code lands.
+# 3. Frontend (new terminal)
+cd frontend
+echo "VITE_API_URL=http://localhost:3000/api" > .env
+npm install
+npm run dev                    # http://localhost:5173
+```
 
-## Test commands (available once the app is scaffolded)
+> **No Docker?** Point `DATABASE_URL` / `TEST_DATABASE_URL` in `backend/.env` at any reachable
+> PostgreSQL and create two databases (`quatrace`, `quatrace_test`). Everything else is identical.
+
+## Running tests
 
 ```bash
 # Backend unit tests
@@ -50,12 +61,29 @@ cd backend && npm run test:unit
 # Backend API tests (requires the test database)
 cd backend && npm run test:api
 
-# Backend tests with coverage
+# Backend unit coverage
 cd backend && npm run test:coverage
 
 # Frontend component tests
 cd frontend && npm run test
 
-# E2E + accessibility tests (requires both servers running)
-cd e2e && npx playwright test
+# E2E + accessibility (builds & previews the frontend automatically)
+cd e2e && npm install && npx playwright install chromium && npx playwright test
+
+# Accessibility tests only
+cd e2e && npx playwright test --grep @a11y
 ```
+
+## Engineering standards
+
+Enforced from the first line of code (see `CLAUDE.md`):
+
+- **SOLID**, applied pragmatically for a beginner audience.
+- **Definition of Done** — every feature ships unit + API + E2E + accessibility tests.
+- **Accessibility: WCAG 2.2 AA** — automated `@axe-core/playwright` scans + a documented manual
+  checklist per feature.
+- **Git workflow** — feature branches → PRs; the maintainer merges; no secrets committed.
+
+Helper skills live under `.claude/skills/`: **`/feature-tests`** (scaffold the test matrix) and
+**`/a11y-audit`** (run the WCAG 2.2 AA pass). CI (`.github/workflows/ci.yml`) runs all suites on
+every PR.

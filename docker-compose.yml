@@ -1,0 +1,26 @@
+# Local development database for QuaTrace.
+# `docker-compose up -d` starts Postgres; the API and frontend run via `npm run dev`.
+# The init script provisions both the dev database and an isolated test database.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: quatrace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: quatrace
+      POSTGRES_PASSWORD: quatrace
+      POSTGRES_DB: quatrace
+    ports:
+      - "5432:5432"
+    volumes:
+      - quatrace-pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quatrace -d quatrace"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  quatrace-pgdata:
