@@ -1,0 +1,32 @@
+{
+  "name": "quatrace-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "QuaTrace backend API (Express + Knex + PostgreSQL)",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "db:migrate": "knex migrate:latest",
+    "db:rollback": "knex migrate:rollback",
+    "db:seed": "knex seed:run",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit",
+    "test:api": "vitest run tests/api",
+    "test:coverage": "vitest run tests/unit --coverage"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "knex": "^3.1.0",
+    "pg": "^8.12.0",
+    "pino": "^9.3.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.0.5",
+    "supertest": "^7.0.0",
+    "vitest": "^2.0.5"
+  }
+}

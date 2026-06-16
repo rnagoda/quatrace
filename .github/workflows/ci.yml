@@ -112,6 +112,11 @@ jobs:
       - name: Run Playwright E2E and axe a11y suites
         run: |
           if [ -f e2e/package.json ]; then
+            # The Playwright webServer builds and previews the frontend, so its
+            # dependencies must be installed first.
+            if [ -f frontend/package.json ]; then
+              ( cd frontend && npm ci )
+            fi
             cd e2e
             npm ci
             npx playwright install --with-deps
