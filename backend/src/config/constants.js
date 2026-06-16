@@ -6,6 +6,16 @@ export const ERROR_CODES = {
   FORBIDDEN: 'FORBIDDEN',
   NOT_FOUND: 'NOT_FOUND',
   CONFLICT: 'CONFLICT',
+  RATE_LIMITED: 'RATE_LIMITED',
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 };
+
+// Cost factor for bcrypt password hashing.
+export const BCRYPT_ROUNDS = 10;
+
+// Name of the httpOnly cookie carrying the refresh token.
+export const REFRESH_COOKIE_NAME = 'refresh_token';
+
+// Path the refresh cookie is scoped to (covers /refresh and /logout).
+export const REFRESH_COOKIE_PATH = '/api/auth';

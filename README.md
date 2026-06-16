@@ -52,6 +52,22 @@ npm run dev                    # http://localhost:5173
 > **No Docker?** Point `DATABASE_URL` / `TEST_DATABASE_URL` in `backend/.env` at any reachable
 > PostgreSQL and create two databases (`quatrace`, `quatrace_test`). Everything else is identical.
 
+## Authentication
+
+The API exposes `POST /api/auth/{register,login,logout,refresh}` and `GET /api/auth/me`. Auth uses
+short-lived JWT access tokens (sent as a `Bearer` header, held in memory by the SPA) plus rotated,
+opaque refresh tokens stored as hashes and delivered in an httpOnly cookie. New accounts are
+created with the `tester` role in a private Pro organization (full onboarding is a later
+increment). The frontend has `/login` and `/register` pages and a protected home route.
+
+`JWT_SECRET` and `JWT_REFRESH_SECRET` are **required in production**; in development and test they
+fall back to an insecure default so local runs and CI need no extra configuration. See
+`.env.example` for all auth variables.
+
+> **Production cookie note:** the refresh cookie is `SameSite=Lax`, which works when the frontend
+> and backend share a site (local dev). A cross-site production deployment (e.g. Vercel + Railway
+> on different domains) will need `SameSite=None; Secure` or a same-domain proxy.
+
 ## Running tests
 
 ```bash
