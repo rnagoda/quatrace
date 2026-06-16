@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getHealth } from '../services/health.js';
 import { logout } from '../services/auth.js';
 import { useAuthStore } from '../store/useAuthStore.js';
@@ -47,13 +47,21 @@ export default function HomePage() {
             {status}
           </span>
         </p>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="mt-6 rounded bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500"
-        >
-          Log out
-        </button>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <Link
+            to="/projects"
+            className="rounded border border-slate-300 px-4 py-2 font-medium text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500"
+          >
+            Projects
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500"
+          >
+            Log out
+          </button>
+        </div>
       </section>
     </main>
   );

@@ -1,11 +1,11 @@
-// Body validation middleware. Parses req.body with a Zod schema; on failure it
-// throws a 400 AppError carrying field-level details for the error envelope.
-// Reused by every endpoint that accepts input.
+// Validation middleware. Parses a request part (body by default, or query) with a
+// Zod schema; on failure it throws a 400 AppError carrying field-level details for
+// the error envelope. Reused by every endpoint that accepts input.
 import { AppError } from '../utils/AppError.js';
 
-export function validate(schema) {
+export function validate(schema, source = 'body') {
   return (req, res, next) => {
-    const result = schema.safeParse(req.body);
+    const result = schema.safeParse(req[source]);
     if (!result.success) {
       const details = result.error.issues.map((issue) => ({
         field: issue.path.join('.'),
@@ -13,7 +13,7 @@ export function validate(schema) {
       }));
       throw AppError.badRequest('Validation failed.', details);
     }
-    req.body = result.data;
+    req[source] = result.data;
     next();
   };
 }

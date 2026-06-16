@@ -68,6 +68,23 @@ fall back to an insecure default so local runs and CI need no extra configuratio
 > and backend share a site (local dev). A cross-site production deployment (e.g. Vercel + Railway
 > on different domains) will need `SameSite=None; Secure` or a same-domain proxy.
 
+## Projects & the access model
+
+`GET/POST /api/projects`, `GET/PATCH /api/projects/:id`, and
+`GET/POST/DELETE /api/projects/:id/members` are the first resource endpoints. They establish the
+**access model** reused by every project-scoped resource:
+
+- All endpoints require authentication and are **organization-scoped** — a project in another org
+  (or a missing id) returns **404**, never 403, so cross-org existence isn't leaked.
+- **Reads** are open to any member of the org (the read-only-other-projects rule); **writes**
+  (create/update/archive, member management) require the **Manager/Admin** role.
+- List endpoints follow the pagination convention: `?page` (1-based) and `?perPage` (default 20,
+  max 100), with `{ page, perPage, total }` in the response `meta`. Projects also accept `?status`
+  and `?sort`.
+
+Since learners are `tester`s, the Projects UI (`/projects`, `/projects/:id`) is **read-only**; it
+shows an empty state until onboarding seeds a project.
+
 ## Running tests
 
 ```bash
