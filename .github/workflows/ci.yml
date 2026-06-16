@@ -24,6 +24,11 @@ jobs:
   backend-unit:
     name: Backend unit tests
     runs-on: ubuntu-latest
+    # Unit tests never open a DB connection, but env validation requires the var
+    # to be present (a placeholder satisfies it). JWT secrets default in test.
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://localhost:5432/unused
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -102,6 +107,25 @@ jobs:
   e2e-a11y:
     name: E2E + accessibility (WCAG 2.2 AA)
     runs-on: ubuntu-latest
+    # Auth flows are full-stack, so the e2e job runs the real backend against a
+    # Postgres service. The Playwright webServer starts both backend and frontend.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: quatrace
+          POSTGRES_PASSWORD: quatrace
+          POSTGRES_DB: quatrace_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U quatrace"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://quatrace:quatrace@localhost:5432/quatrace_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -112,11 +136,10 @@ jobs:
       - name: Run Playwright E2E and axe a11y suites
         run: |
           if [ -f e2e/package.json ]; then
-            # The Playwright webServer builds and previews the frontend, so its
-            # dependencies must be installed first.
-            if [ -f frontend/package.json ]; then
-              ( cd frontend && npm ci )
-            fi
+            # Backend: install + migrate the test DB (Playwright starts the server).
+            ( cd backend && npm ci && npm run db:migrate )
+            # Frontend deps for the preview server the Playwright webServer builds.
+            ( cd frontend && npm ci )
             cd e2e
             npm ci
             npx playwright install --with-deps

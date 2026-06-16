@@ -18,11 +18,27 @@ export class AppError extends Error {
     this.details = details;
   }
 
-  static serviceUnavailable(message, details = []) {
-    return new AppError(503, ERROR_CODES.SERVICE_UNAVAILABLE, message, details);
+  static badRequest(message, details = []) {
+    return new AppError(400, ERROR_CODES.VALIDATION_ERROR, message, details);
+  }
+
+  static unauthorized(message = 'Authentication required.', details = []) {
+    return new AppError(401, ERROR_CODES.UNAUTHORIZED, message, details);
+  }
+
+  static forbidden(message = 'You do not have permission to do that.', details = []) {
+    return new AppError(403, ERROR_CODES.FORBIDDEN, message, details);
   }
 
   static notFound(message, details = []) {
     return new AppError(404, ERROR_CODES.NOT_FOUND, message, details);
+  }
+
+  static conflict(message, details = []) {
+    return new AppError(409, ERROR_CODES.CONFLICT, message, details);
+  }
+
+  static serviceUnavailable(message, details = []) {
+    return new AppError(503, ERROR_CODES.SERVICE_UNAVAILABLE, message, details);
   }
 }

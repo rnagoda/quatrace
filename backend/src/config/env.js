@@ -15,6 +15,11 @@ const schema = z.object({
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
+  // JWT secrets are required in production; see the post-parse check below.
+  JWT_SECRET: z.string().optional(),
+  JWT_REFRESH_SECRET: z.string().optional(),
+  JWT_EXPIRY: z.string().default('15m'),
+  JWT_REFRESH_EXPIRY: z.string().default('7d'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -29,6 +34,22 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+const data = parsed.data;
+const inProduction = data.NODE_ENV === 'production';
+
+// JWT secrets must be provided explicitly in production. In development/test we
+// fall back to a clearly-insecure default so local runs and CI need no extra
+// configuration — this default must never reach production.
+const INSECURE_DEFAULT = 'insecure-dev-secret-change-me';
+if (inProduction && (!data.JWT_SECRET || !data.JWT_REFRESH_SECRET)) {
+  process.stderr.write(
+    'JWT_SECRET and JWT_REFRESH_SECRET are required when NODE_ENV=production.\n',
+  );
+  process.exit(1);
+}
+data.JWT_SECRET = data.JWT_SECRET || INSECURE_DEFAULT;
+data.JWT_REFRESH_SECRET = data.JWT_REFRESH_SECRET || `${INSECURE_DEFAULT}-refresh`;
+
+export const env = data;
 export const isTest = env.NODE_ENV === 'test';
 export const isProduction = env.NODE_ENV === 'production';

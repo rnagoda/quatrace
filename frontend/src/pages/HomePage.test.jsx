@@ -1,34 +1,47 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import HomePage from './HomePage.jsx';
+import { useAuthStore } from '../store/useAuthStore.js';
 
-// Mock the service layer so the component test never hits the network.
 vi.mock('../services/health.js', () => ({
   getHealth: vi.fn(() => Promise.resolve({ status: 'ok', db: 'ok' })),
 }));
+vi.mock('../services/auth.js', () => ({ logout: vi.fn(() => Promise.resolve()) }));
 
-function renderWithQuery(ui) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+function renderHome() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <HomePage />
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 
 describe('HomePage', () => {
-  it('should render the app heading when mounted', () => {
-    renderWithQuery(<HomePage />);
-    expect(
-      screen.getByRole('heading', { name: /quatrace/i }),
-    ).toBeInTheDocument();
+  beforeEach(() => {
+    useAuthStore.setState({
+      user: { first_name: 'Ada', last_name: 'Lovelace', role: 'tester' },
+      isAuthenticated: true,
+      status: 'authenticated',
+    });
+  });
+
+  it('should render the app heading', () => {
+    renderHome();
+    expect(screen.getByRole('heading', { name: /quatrace/i })).toBeInTheDocument();
+  });
+
+  it('should show the signed-in user', () => {
+    renderHome();
+    expect(screen.getByTestId('current-user')).toHaveTextContent('Ada Lovelace');
   });
 
   it('should show the API status once the health query resolves', async () => {
-    renderWithQuery(<HomePage />);
-    await waitFor(() =>
-      expect(screen.getByTestId('api-status')).toHaveTextContent('ok'),
-    );
+    renderHome();
+    await waitFor(() => expect(screen.getByTestId('api-status')).toHaveTextContent('ok'));
   });
 });
