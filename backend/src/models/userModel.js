@@ -14,9 +14,14 @@ export const PUBLIC_USER_COLUMNS = [
   'is_npc',
   'npc_persona',
   'avatar_url',
+  'onboarded_at',
   'created_at',
   'updated_at',
 ];
+
+export function markOnboarded(id, trx = db) {
+  return trx('users').where({ id }).update({ onboarded_at: trx.fn.now() });
+}
 
 export function findByEmail(email, trx = db) {
   return trx(TABLE).whereRaw('lower(email) = lower(?)', [email]).first();

@@ -83,7 +83,17 @@ fall back to an insecure default so local runs and CI need no extra configuratio
   and `?sort`.
 
 Since learners are `tester`s, the Projects UI (`/projects`, `/projects/:id`) is **read-only**; it
-shows an empty state until onboarding seeds a project.
+is populated by onboarding (below).
+
+## Onboarding
+
+On first login a learner is routed through a guided wizard (`/onboarding`): choose a project type
+→ confirm their QA Engineer (Tester) role → meet their team. `POST /api/onboarding` then provisions
+the workspace in one transaction — a personal project, the 5-NPC virtual team, two read-only
+sibling projects, three environments (Dev/QA/Staging), and a few builds — and stamps
+`users.onboarded_at`. A `RequireOnboarded` gate redirects un-onboarded users to the wizard and
+onboarded users away from it. (Defects/test-cases/runs are seeded by their own later increments;
+the post-onboarding landing is Home until the Scenario Dashboard ships.)
 
 ## Running tests
 
