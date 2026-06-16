@@ -38,10 +38,17 @@ export default function ProjectDetailPage() {
                 </li>
               ))}
             </ul>
+
+            <Link
+              to={`/projects/${project.id}/defects`}
+              className="mt-6 inline-block font-medium text-slate-900 underline"
+            >
+              View defects
+            </Link>
           </>
         )}
 
-        <Link to="/projects" className="mt-6 inline-block text-sm text-slate-600 underline">
+        <Link to="/projects" className="mt-6 block text-sm text-slate-600 underline">
           Back to projects
         </Link>
       </div>

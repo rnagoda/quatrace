@@ -8,11 +8,13 @@ import * as projects from '../models/projectModel.js';
 import * as members from '../models/projectMemberModel.js';
 import * as environments from '../models/environmentModel.js';
 import * as builds from '../models/buildModel.js';
+import * as defects from '../models/defectModel.js';
 import {
   NPC_TEAM,
   SIBLING_PROJECTS,
   DEFAULT_ENVIRONMENTS,
   DEFAULT_BUILDS,
+  DEFAULT_DEFECTS,
   PROJECT_TYPE_LABELS,
 } from '../domain/onboarding.js';
 
@@ -73,7 +75,7 @@ export async function completeOnboarding(authUser, { project_type }) {
     }
 
     // 5. Default environments and builds on the personal project.
-    await environments.insertMany(
+    const environmentRows = await environments.insertMany(
       DEFAULT_ENVIRONMENTS.map((name) => ({ project_id: project.id, name, is_default: true })),
       trx,
     );
@@ -86,7 +88,25 @@ export async function completeOnboarding(authUser, { project_type }) {
       trx,
     );
 
-    // 6. Mark the learner onboarded.
+    // 6. Starter defects so the project is populated on first login.
+    const envByName = Object.fromEntries(environmentRows.map((e) => [e.name, e.id]));
+    const npcByPersona = Object.fromEntries(npcs.map((n) => [n.npc_persona, n.id]));
+    await defects.insertMany(
+      DEFAULT_DEFECTS.map((d) => ({
+        project_id: project.id,
+        title: d.title,
+        description: d.description ?? null,
+        status: d.status,
+        severity: d.severity,
+        priority: d.priority,
+        reporter_id: me.id,
+        assignee_id: d.assignee_persona ? (npcByPersona[d.assignee_persona] ?? null) : null,
+        environment_id: d.environment ? (envByName[d.environment] ?? null) : null,
+      })),
+      trx,
+    );
+
+    // 7. Mark the learner onboarded.
     await users.markOnboarded(me.id, trx);
 
     const team = npcs.map(({ id, first_name, last_name, role, npc_persona }) => ({

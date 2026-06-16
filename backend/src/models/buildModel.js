@@ -11,3 +11,7 @@ export async function insertMany(rows, trx = db) {
 export function listByProject(projectId, trx = db) {
   return trx(TABLE).where({ project_id: projectId }).orderBy('created_at', 'desc');
 }
+
+export function findById(id, trx = db) {
+  return trx(TABLE).where({ id }).first();
+}

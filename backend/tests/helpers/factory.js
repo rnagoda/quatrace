@@ -26,10 +26,13 @@ export async function createUser({ organizationId, role = 'tester', ...overrides
   let orgId = organizationId;
   if (!orgId) orgId = (await createOrg()).id;
   seq += 1;
+  // Include a random suffix so concurrently-running test files (which each start
+  // their own seq at 1) cannot collide on the unique email index.
+  const unique = `${Date.now()}_${seq}_${Math.random().toString(36).slice(2, 8)}`;
   const [user] = await db('users')
     .insert({
       organization_id: orgId,
-      email: `factory_${Date.now()}_${seq}@example.test`,
+      email: `factory_${unique}@example.test`,
       password_hash: 'unused-in-tests',
       first_name: 'Fac',
       last_name: 'Tory',

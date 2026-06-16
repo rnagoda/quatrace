@@ -38,6 +38,10 @@ export class AppError extends Error {
     return new AppError(409, ERROR_CODES.CONFLICT, message, details);
   }
 
+  static invalidTransition(message, details = []) {
+    return new AppError(422, ERROR_CODES.INVALID_TRANSITION, message, details);
+  }
+
   static serviceUnavailable(message, details = []) {
     return new AppError(503, ERROR_CODES.SERVICE_UNAVAILABLE, message, details);
   }

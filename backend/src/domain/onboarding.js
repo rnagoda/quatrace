@@ -34,3 +34,56 @@ export const DEFAULT_BUILDS = [
   { name: 'v1.1.0', release_notes: 'Sprint 1 features.' },
   { name: 'v1.2.0', release_notes: 'Sprint 2 features.' },
 ];
+
+// A starter set of defects so the learner's project feels alive on first login.
+// `assignee_persona` (when set) is mapped to the seeded NPC; `environment` to the
+// seeded environment by name. The learner is the reporter.
+export const DEFAULT_DEFECTS = [
+  {
+    title: 'Login button unresponsive on slow networks',
+    description: 'The login button does nothing for ~5s on a throttled connection.',
+    status: 'open',
+    severity: 'high',
+    priority: 'p2',
+    assignee_persona: 'developer',
+    environment: 'QA',
+  },
+  {
+    title: 'Password reset email is never delivered',
+    description: 'Requesting a reset returns success but no email arrives.',
+    status: 'in_progress',
+    severity: 'critical',
+    priority: 'p1',
+    assignee_persona: 'developer',
+    environment: 'QA',
+  },
+  {
+    title: 'Dashboard chart misaligned on small screens',
+    status: 'new',
+    severity: 'low',
+    priority: 'p4',
+    environment: 'Dev',
+  },
+  {
+    title: 'Search returns stale results after an update',
+    status: 'in_testing',
+    severity: 'medium',
+    priority: 'p3',
+    assignee_persona: 'developer',
+    environment: 'Staging',
+  },
+  {
+    title: 'Session expires sooner than configured',
+    status: 'open',
+    severity: 'medium',
+    priority: 'p2',
+    environment: 'QA',
+  },
+  {
+    title: 'Typo on the account settings page',
+    status: 'resolved',
+    severity: 'low',
+    priority: 'p4',
+    environment: 'Dev',
+  },
+];
