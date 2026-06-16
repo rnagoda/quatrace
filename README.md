@@ -95,6 +95,21 @@ sibling projects, three environments (Dev/QA/Staging), and a few builds — and 
 onboarded users away from it. (Defects/test-cases/runs are seeded by their own later increments;
 the post-onboarding landing is Home until the Scenario Dashboard ships.)
 
+## Defects
+
+`/api/projects/:id/defects` (list/create), `/api/projects/:id/defects/:defectId` (get/patch),
+`POST .../transition`, and `.../comments` (list/add) are the defect-tracking endpoints — the first
+primary QA module and the learner's first write surface. They introduce the **membership write
+gate**: defect *reads* are open to any org member, but *writes* (create/transition/comment) require
+the caller to be a **member of the project and not a viewer** — so a `tester` manages defects on
+their active project but is read-only elsewhere.
+
+Status changes go through a dedicated **transition** endpoint that enforces the defect
+state-machine (`DEFECT_STATUS_TRANSITIONS` in `domain/enums.js`); an illegal move returns
+`422 INVALID_TRANSITION`. The UI (`/projects/:id/defects`, `/projects/:id/defects/:defectId`) only
+offers valid transitions and shows write controls when the project is the learner's. Onboarding now
+seeds ~6 sample defects so the module is populated on first login.
+
 ## Running tests
 
 ```bash

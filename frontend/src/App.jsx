@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
+import DefectsPage from './pages/DefectsPage.jsx';
+import DefectDetailPage from './pages/DefectDetailPage.jsx';
 import OnboardingPage from './pages/OnboardingPage.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
 import RequireOnboarded from './components/RequireOnboarded.jsx';
@@ -70,6 +72,22 @@ export default function App() {
         element={
           <RequireOnboarded>
             <ProjectDetailPage />
+          </RequireOnboarded>
+        }
+      />
+      <Route
+        path="/projects/:id/defects"
+        element={
+          <RequireOnboarded>
+            <DefectsPage />
+          </RequireOnboarded>
+        }
+      />
+      <Route
+        path="/projects/:id/defects/:defectId"
+        element={
+          <RequireOnboarded>
+            <DefectDetailPage />
           </RequireOnboarded>
         }
       />

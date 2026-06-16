@@ -5,6 +5,7 @@ import { authorize } from '../middleware/authorize.js';
 import { validate } from '../middleware/validate.js';
 import { loadProject } from '../middleware/loadProject.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import defectRoutes from './defects.js';
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -16,6 +17,9 @@ const router = Router();
 
 // Every project endpoint requires authentication.
 router.use(authenticate);
+
+// Project-scoped resources (defects, and later test-cases/runs) nest here.
+router.use('/:id/defects', defectRoutes);
 
 // Reads: any authenticated org member (org scoping enforced per-resource).
 router.get('/', validate(listProjectsQuerySchema, 'query'), asyncHandler(projectController.list));

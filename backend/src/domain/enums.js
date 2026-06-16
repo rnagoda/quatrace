@@ -54,3 +54,8 @@ export const DEFECT_STATUS_TRANSITIONS = {
   closed: ['open'],
   wont_fix: ['open'],
 };
+
+/** Whether a defect may move directly from one status to another (PRD §5.2). */
+export function canTransition(from, to) {
+  return (DEFECT_STATUS_TRANSITIONS[from] || []).includes(to);
+}

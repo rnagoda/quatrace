@@ -55,6 +55,7 @@ describe('POST /api/onboarding', () => {
 
     expect(await db('environments').where({ project_id: projectId })).toHaveLength(3);
     expect((await db('builds').where({ project_id: projectId })).length).toBeGreaterThanOrEqual(3);
+    expect((await db('defects').where({ project_id: projectId })).length).toBeGreaterThanOrEqual(6);
 
     const me = await db('users').where({ id: user.id }).first();
     expect(me.onboarded_at).not.toBeNull();
