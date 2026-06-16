@@ -1,39 +1,37 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import {
+  PASSWORD,
+  A11Y_TAGS,
+  uniqueEmail,
+  registerViaUI,
+  registerAndOnboard,
+} from '../../fixtures/helpers.js';
 
-const PASSWORD = 'Password123';
-let seq = 0;
-function uniqueEmail() {
-  seq += 1;
-  return `e2e_${Date.now()}_${seq}@example.test`;
-}
-
-async function registerViaUI(page, email) {
-  await page.goto('/register');
-  await page.getByLabel('First name').fill('E2E');
-  await page.getByLabel('Last name').fill('User');
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(PASSWORD);
-  await page.getByRole('button', { name: 'Create account' }).click();
-}
+const API = 'http://localhost:3000/api';
 
 test.describe('authentication', () => {
-  test('should register and land on the authenticated home page', async ({ page }) => {
-    await registerViaUI(page, uniqueEmail());
-    await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText(/signed in as/i)).toBeVisible();
+  test('should route a newly registered learner to onboarding', async ({ page }) => {
+    await registerViaUI(page);
+    await expect(page).toHaveURL(/\/onboarding$/);
   });
 
   test('should log out back to the login page', async ({ page }) => {
-    await registerViaUI(page, uniqueEmail());
+    await registerAndOnboard(page);
     await page.getByRole('button', { name: /log out/i }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
-  test('should log in with an existing account', async ({ page, request }) => {
+  test('should log in with an existing onboarded account', async ({ page, request }) => {
+    // Create and onboard an account via the API, then sign in through the UI.
     const email = uniqueEmail();
-    await request.post('http://localhost:3000/api/auth/register', {
+    const reg = await request.post(`${API}/auth/register`, {
       data: { email, password: PASSWORD, first_name: 'E2E', last_name: 'User' },
+    });
+    const token = (await reg.json()).data.accessToken;
+    await request.post(`${API}/onboarding`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { project_type: 'web' },
     });
 
     await page.goto('/login');
@@ -55,8 +53,7 @@ test.describe('authentication', () => {
   });
 
   test('should preserve the session across a reload', async ({ page }) => {
-    await registerViaUI(page, uniqueEmail());
-    await expect(page.getByText(/signed in as/i)).toBeVisible();
+    await registerAndOnboard(page);
     await page.reload();
     await expect(page.getByText(/signed in as/i)).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
@@ -64,17 +61,13 @@ test.describe('authentication', () => {
 
   test('@a11y login page should have no WCAG 2.2 AA violations', async ({ page }) => {
     await page.goto('/login');
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-      .analyze();
+    const results = await new AxeBuilder({ page }).withTags(A11Y_TAGS).analyze();
     expect(results.violations).toEqual([]);
   });
 
   test('@a11y register page should have no WCAG 2.2 AA violations', async ({ page }) => {
     await page.goto('/register');
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-      .analyze();
+    const results = await new AxeBuilder({ page }).withTags(A11Y_TAGS).analyze();
     expect(results.violations).toEqual([]);
   });
 });

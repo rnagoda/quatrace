@@ -5,7 +5,9 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import ProjectsPage from './pages/ProjectsPage.jsx';
 import ProjectDetailPage from './pages/ProjectDetailPage.jsx';
+import OnboardingPage from './pages/OnboardingPage.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
+import RequireOnboarded from './components/RequireOnboarded.jsx';
 import { useAuthStore } from './store/useAuthStore.js';
 import { restoreSession } from './services/auth.js';
 
@@ -40,27 +42,35 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route
-        path="/"
+        path="/onboarding"
         element={
           <RequireAuth>
-            <HomePage />
+            <OnboardingPage />
           </RequireAuth>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <RequireOnboarded>
+            <HomePage />
+          </RequireOnboarded>
         }
       />
       <Route
         path="/projects"
         element={
-          <RequireAuth>
+          <RequireOnboarded>
             <ProjectsPage />
-          </RequireAuth>
+          </RequireOnboarded>
         }
       />
       <Route
         path="/projects/:id"
         element={
-          <RequireAuth>
+          <RequireOnboarded>
             <ProjectDetailPage />
-          </RequireAuth>
+          </RequireOnboarded>
         }
       />
     </Routes>
